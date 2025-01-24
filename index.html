@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Currency Converter/title>
+</head>
+<body>
+  <h1>Currency Conversion Tool</h1>
+  <form id="conversionForm">
+    <label for="number">Enter a number:</label>
+    <input type="number" id="number" name="number" required><br><br>
+
+    <label for="scale">Is the number in:</label>
+    <select id="scale" name="scale" required>
+      <option value="1e6">Million</option>
+      <option value="1e9">Billion</option>
+      <option value="1e12">Trillion</option>
+    </select><br><br>
+
+    <label for="outputFormat">Display result in:</label>
+    <select id="outputFormat" name="outputFormat" required>
+      <option value="actuals">Actuals</option>
+      <option value="lakh">Lakh</option>
+      <option value="crore">Crore</option>
+    </select><br><br>
+
+    <button type="submit">Convert</button>
+  </form>
+
+  <p id="result"></p>
+  <p id="conversionRateInfo"></p>
+
+  <script>
+    async function getConversionRate(apiUrl, toCurrency) {
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('Failed to fetch conversion rates.');
+        const data = await response.json();
+        return data.conversion_rates[toCurrency];
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    }
+
+    document.getElementById('conversionForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      // Get input values
+      const number = parseFloat(document.getElementById('number').value);
+      const scale = parseFloat(document.getElementById('scale').value);
+      const outputFormat = document.getElementById('outputFormat').value;
+
+      // Define API URL
+      const apiUrl = 'https://v6.exchangerate-api.com/v6/ea17d210f4ee67bd4ae1423f/latest/USD'; 
+
+      // Fetch conversion rate for INR
+      const conversionRate = await getConversionRate(apiUrl, 'INR');
+      if (!conversionRate) {
+        document.getElementById('result').textContent = 'Error fetching conversion rate.';
+        return;
+      }
+
+      // Show the conversion rate
+      document.getElementById('conversionRateInfo').textContent = `Conversion Rate (USD to INR): ${conversionRate}`;
+
+      // Convert the number to actual value
+      const actualValue = number * scale;
+
+      // Convert to INR
+      const convertedValue = actualValue * conversionRate;
+
+      // Format the result
+      let result;
+      if (outputFormat === 'lakh') {
+        result = `INR ${(convertedValue / 1e5).toFixed(2)} Lakh`;
+      } else if (outputFormat === 'crore') {
+        result = `INR ${(convertedValue / 1e7).toFixed(2)} Crore`;
+      } else {
+        result = `${convertedValue.toLocaleString()} Actuals (INR)`;
+      }
+
+      // Display the result
+      document.getElementById('result').textContent = `Converted Value: ${result}`;
+    });
+  </script>
+</body>
+</html>
